@@ -1,0 +1,18 @@
+
+.game {
+	border: 2px solid black;
+	padding: 2px;
+	margin-bottom: 2px;
+}
+
+.game table {
+	margin-bottom: 0px;
+}
+
+.datepicker {
+	z-index: 2000;
+}
+
+.select-small select {
+	width: 60px;
+}

@@ -1,0 +1,212 @@
+<head>
+  <title>pickem</title>
+</head>
+
+<body>
+	{{> page}}
+</body>
+
+<template name="page">
+	{{#if showCreateDialog}}
+		{{> createDialog}}
+	{{/if}}
+	{{#if showModifyDialog}}
+		{{> modifyDialog}}
+	{{/if}}
+	<div class="container">
+		<div class="row"> </div>
+		<div class="row">
+			<div style="float:right">
+				{{loginButtons align="right"}}
+			</div>
+			{{> weeks}}			
+		</div>
+		<div class="row"> </div>
+		<div class="row">
+			{{> games}}			
+		</div>
+	</div>
+</template>
+
+<template name="weeks">
+	<div class="span4">
+	{{#each allWeeks}}
+		{{#if isCurrentWeek}}
+		<span>{{this}}</span>
+		{{else}}
+		<span><a href="#" class="week">{{this}}</a></span>
+		{{/if}}
+	{{/each}}
+	</div>
+</template>
+
+<template name="games">
+    <div class="span4">
+		{{#if canCreate}}
+			<span><a href="#" class="createGame">create matchup</a></span>
+		{{/if}}
+        {{#each games}}
+          <div class="game">
+            {{> game}}
+          </div>
+        {{/each}}
+    </div>
+</template>
+
+<template name="game">
+    <table class="table table-hover table-condensed">
+		<tr>
+			<td><img src="img/{{awayIcon}}" class="img-rounded" height="20" width="20"> {{away}}</td>
+			{{#if awaySelected}}
+			<td><i class="icon-ok"></i></td>
+			{{else}}
+			<td><button class="btn btn-link pick-away">pick</button></td>
+			{{/if}}
+		</tr>
+		<tr>
+			<td><img src="img/{{homeIcon}}" class="img-rounded" height="20" width="20">{{home}}</td>
+			{{#if homeSelected}}
+			<td><i class="icon-ok"></i></td>
+			{{else}}
+			<td><button class="btn btn-link pick-home">pick</button></td>
+			{{/if}}
+		</tr>
+		<tr>
+			{{#if canModify}}
+			<td>{{kickoff}}</td>
+			<td><a href="#" class="modify-game">modify</a> | <a href="#" class="delete-game">delete</a></td>
+			{{else}}
+			<td colspan="2">{{kickoff}}</td>
+			{{/if}}
+		</tr>
+	</table>
+</template>
+
+<template name="createDialog">
+	<div class="mask"> </div>
+	<div class="modal">
+		<div class="modal-header">
+			<button type="button" class="close cancel">&times;</button>
+			<h3>Add matchup</h3>
+		</div>
+
+		<div class="modal-body">
+			{{#if error}}
+				<div class="alert alert-error">{{error}}</div>
+			{{/if}}
+
+			<label>Away</label>
+			<select class="away">
+				{{#each teams}}
+					<option>{{this}}</option>
+				{{/each}}
+			</select>
+
+			<label>Home</label>
+			<select class="home">
+				{{#each teams}}
+					<option>{{this}}</option>
+				{{/each}}
+			</select>
+
+			<label>Week</label>
+			<div class="week-select select-small">
+				<select class="week">
+					{{#each weeks}}
+						{{#if isCurrentWeek}}
+						<option selected>{{this}}</option>
+						{{else}}
+						<option>{{this}}</option>
+						{{/if}}
+					{{/each}}
+				</select>
+			</div>
+
+			<label>Kickoff</label>
+			<div class="input-append date" id="kickoff-dp" data-date="{{lastKickoffDate}}" data-date-format="{{dateFormat}}">
+			  <input class="span2 kickoff" size="16" type="text" value="{{lastKickoffDate}}">
+			  <span class="add-on"><i class="icon-th"></i></span>
+			</div>
+			
+			<label>Kickoff Time</label>
+			<div class="select-small">
+				<select class="time-hour">
+					{{#each hours}}
+						<option>{{this}}</option>
+					{{/each}}
+				</select>
+				:
+				<select class="time-minute">
+					{{#each minutes}}
+						<option>{{this}}</option>
+					{{/each}}
+				</select>
+			</div>
+		</div>
+
+		<div class="modal-footer">
+			<a href="#" class="btn cancel">cancel</a>
+			<a href="#" class="btn btn-primary save">add matchup</a>
+		</div>
+	</div>
+</template>
+
+<template name="modifyDialog">
+	{{#with currentMatchup}}
+		<div class="mask"> </div>
+		<div class="modal">
+			<div class="modal-header">
+				<button type="button" class="close cancel">&times;</button>
+				<h3>Modify matchup</h3>
+			</div>
+
+			<div class="modal-body">
+				<input style="display:none" class="orig-week" value="{{week}}">
+				{{#if error}}
+					<div class="alert alert-error">{{error}}</div>
+				{{/if}}
+
+				<label>Away</label>
+				<input disabled="disabled" class="away" type="text" value="{{away}}">
+
+				<label>Home</label>
+				<input disabled="disabled" class="home" type="text" value="{{home}}">
+				
+				<label>Week</label>
+				<div class="week-select select-small">
+					<select class="week">
+						{{#each weeks}}
+							{{#if isSelectedWeek}}
+							<option selected>{{this}}</option>
+							{{else}}
+							<option>{{this}}</option>
+							{{/if}}
+						{{/each}}
+					</select>
+				</div>
+
+				<label>Kickoff</label>
+				<div class="input-append date" id="kickoff-dp" data-date="{{kickoffDate}}" data-date-format="{{dateFormat}}">
+				  <input class="span2 kickoff" size="16" type="text" value="{{kickoffDate}}">
+				  <span class="add-on"><i class="icon-th"></i></span>
+				</div>
+			
+				<label>Kickoff Time</label>
+				<div class="select-small">
+					<select class="time-hour">
+						{{hourOptions kickoffHour}}
+					</select>
+					:
+					<select class="time-minute">
+						{{minuteOptions kickoffMinute}}
+					</select>
+				</div>
+			</div>
+
+			<div class="modal-footer">
+				<a href="#" class="btn cancel">cancel</a>
+				<a href="#" class="btn btn-primary save">modify matchup</a>
+			</div>
+		</div>
+	{{/with}}
+</template>
