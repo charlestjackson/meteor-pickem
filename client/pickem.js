@@ -7,6 +7,20 @@ if (!Session.get("currentWeek"))
 
 Session.set("dpDateFormat", "mm-dd-yyyy");
 
+Meteor.subscribe('allteams');
+Meteor.subscribe('allmatchups');
+Meteor.subscribe('mygames');
+
+var cachedteams;
+Meteor.startup(function () {
+	Meteor.autorun(function() {
+		cachedteams = new Array();
+		Teams.find({}, { sort: { name: 1 } }).forEach(function(team) {
+			cachedteams[team.name] = team;
+		});
+	});
+});
+
 /*************************
 	Global functions
 *************************/
@@ -92,6 +106,16 @@ Template.game.kickoff = function() {
 
 Template.game.canModify = function() {
 	return isAdmin();
+}
+
+Template.game.awayRecord = function() {
+	var t = cachedteams[this.away];
+	return '(' + t.wins + '-' + t.losses + '-' + t.ties + ')';
+}
+
+Template.game.homeRecord = function() {
+	var t = cachedteams[this.home];
+	return '(' + t.wins + '-' + t.losses + '-' + t.ties + ')';
 }
 
 Template.game.events = {

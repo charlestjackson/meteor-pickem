@@ -2,6 +2,11 @@ var adminId = 'b3b31f73-83ef-4e8a-b185-6bc2465088d8';
 
 Matchups = new Meteor.Collection("matchups");
 Games = new Meteor.Collection("games");
+Teams = new Meteor.Collection("teams");
+
+function allowableFields(modified, allowed) {
+	return _.difference(modified, allowed).length;
+}
 
 Games.allow({
 	insert: function (userId, game) {
@@ -17,8 +22,7 @@ Games.allow({
 			if (userId !== game.owner)
 				return false;
 				
-			var allowed = ['awaySelected', 'homeSelected'];
-			if (_.difference(fields, allowed).length)
+			if (allowableFields(fields, ['awaySelected', 'homeSelected']))
 				return false; // tried to write to forbidden field
 				
 			return true;
@@ -44,9 +48,8 @@ Matchups.allow( {
 			
 			if (userId != matchup.owner && userId != adminId) 
 				return false;
-				
-			var allowed = ['kickoff', 'week'];
-			if (_.difference(fields, allowed).length)
+			
+			if (allowableFields(fields, ['kickoff', 'week']))
 				return false;
 				
 			return true;
@@ -59,3 +62,25 @@ Matchups.allow( {
 		})
 	}
 });
+
+Teams.allow( {
+	insert: function(userId, team) {
+		userId && userId === team.owner;
+	},
+	
+	update: function(userId, teams, fields, modifier) {
+		// admin user can do anything
+		if (userId === adminId);
+			return true;
+			
+		// non-owner can't do shit
+		if (userId != team.owner)
+			return false;
+	},
+	
+	remove: function(userId, teams) {
+		return _.all(teams, function(team) {
+			return userId === team.owner;
+		})
+	}
+})

@@ -56,7 +56,7 @@
 <template name="game">
     <table class="table table-hover table-condensed">
 		<tr>
-			<td><img src="img/{{awayIcon}}" class="img-rounded" height="20" width="20"> {{away}}</td>
+			<td><img src="img/{{awayIcon}}" class="img-rounded" height="20" width="20"> {{away}} {{awayRecord}}</td>
 			{{#if awaySelected}}
 			<td><i class="icon-ok"></i></td>
 			{{else}}
@@ -64,7 +64,7 @@
 			{{/if}}
 		</tr>
 		<tr>
-			<td><img src="img/{{homeIcon}}" class="img-rounded" height="20" width="20">{{home}}</td>
+			<td><img src="img/{{homeIcon}}" class="img-rounded" height="20" width="20">{{home}} {{homeRecord}}</td>
 			{{#if homeSelected}}
 			<td><i class="icon-ok"></i></td>
 			{{else}}
