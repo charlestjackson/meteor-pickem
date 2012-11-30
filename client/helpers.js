@@ -27,3 +27,23 @@ Handlebars.registerHelper('minuteOptions', function(selectedMinute) {
 	
 	return new Handlebars.SafeString(html);
 });
+
+Handlebars.registerHelper('victorOptions', function() {
+	var html = '';
+	
+	html += '<option></option>';
+	
+	if (this.actual === this.away) {
+		html += '<option selected>' + this.away + '</option>';
+	} else {
+		html += '<option>' + this.away + '</option>';
+	}
+	
+	if (this.actual === this.home) {
+		html += '<option selected>' + this.home + '</option>';
+	} else {
+		html += '<option>' + this.home + '</option>';
+	}
+	
+	return new Handlebars.SafeString(html);
+})

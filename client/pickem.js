@@ -2,24 +2,23 @@
 // from http://jacwright.com/projects/javascript/date_format/
 Date.prototype.format=function(format){var returnStr='';var replace=Date.replaceChars;for(var i=0;i<format.length;i++){var curChar=format.charAt(i);if(i-1>=0&&format.charAt(i-1)=="\\"){returnStr+=curChar}else if(replace[curChar]){returnStr+=replace[curChar].call(this)}else if(curChar!="\\"){returnStr+=curChar}}return returnStr};Date.replaceChars={shortMonths:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],longMonths:['January','February','March','April','May','June','July','August','September','October','November','December'],shortDays:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],longDays:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],d:function(){return(this.getDate()<10?'0':'')+this.getDate()},D:function(){return Date.replaceChars.shortDays[this.getDay()]},j:function(){return this.getDate()},l:function(){return Date.replaceChars.longDays[this.getDay()]},N:function(){return this.getDay()+1},S:function(){return(this.getDate()%10==1&&this.getDate()!=11?'st':(this.getDate()%10==2&&this.getDate()!=12?'nd':(this.getDate()%10==3&&this.getDate()!=13?'rd':'th')))},w:function(){return this.getDay()},z:function(){var d=new Date(this.getFullYear(),0,1);return Math.ceil((this-d)/86400000)}, W:function(){var d=new Date(this.getFullYear(),0,1);return Math.ceil((((this-d)/86400000)+d.getDay()+1)/7)},F:function(){return Date.replaceChars.longMonths[this.getMonth()]},m:function(){return(this.getMonth()<9?'0':'')+(this.getMonth()+1)},M:function(){return Date.replaceChars.shortMonths[this.getMonth()]},n:function(){return this.getMonth()+1},t:function(){var d=new Date();return new Date(d.getFullYear(),d.getMonth(),0).getDate()},L:function(){var year=this.getFullYear();return(year%400==0||(year%100!=0&&year%4==0))},o:function(){var d=new Date(this.valueOf());d.setDate(d.getDate()-((this.getDay()+6)%7)+3);return d.getFullYear()},Y:function(){return this.getFullYear()},y:function(){return(''+this.getFullYear()).substr(2)},a:function(){return this.getHours()<12?'am':'pm'},A:function(){return this.getHours()<12?'AM':'PM'},B:function(){return Math.floor((((this.getUTCHours()+1)%24)+this.getUTCMinutes()/60+this.getUTCSeconds()/ 3600) * 1000/24)}, g:function(){return this.getHours()%12||12},G:function(){return this.getHours()},h:function(){return((this.getHours()%12||12)<10?'0':'')+(this.getHours()%12||12)},H:function(){return(this.getHours()<10?'0':'')+this.getHours()},i:function(){return(this.getMinutes()<10?'0':'')+this.getMinutes()},s:function(){return(this.getSeconds()<10?'0':'')+this.getSeconds()},u:function(){var m=this.getMilliseconds();return(m<10?'00':(m<100?'0':''))+m},e:function(){return"Not Yet Supported"},I:function(){return"Not Yet Supported"},O:function(){return(-this.getTimezoneOffset()<0?'-':'+')+(Math.abs(this.getTimezoneOffset()/60)<10?'0':'')+(Math.abs(this.getTimezoneOffset()/60))+'00'},P:function(){return(-this.getTimezoneOffset()<0?'-':'+')+(Math.abs(this.getTimezoneOffset()/60)<10?'0':'')+(Math.abs(this.getTimezoneOffset()/60))+':00'},T:function(){var m=this.getMonth();this.setMonth(0);var result=this.toTimeString().replace(/^.+ \(?([^\)]+)\)?$/,'$1');this.setMonth(m);return result},Z:function(){return-this.getTimezoneOffset()*60},c:function(){return this.format("Y-m-d\\TH:i:sP")},r:function(){return this.toString()},U:function(){return this.getTime()/1000}};
 
-if (!Session.get("currentWeek"))
-	Session.set("currentWeek", 13);
-
 Session.set("dpDateFormat", "mm-dd-yyyy");
 
 Meteor.subscribe('allteams');
 Meteor.subscribe('allmatchups');
 Meteor.subscribe('mygames');
 
-var cachedteams;
 Meteor.startup(function () {
-	Meteor.autorun(function() {
-		cachedteams = new Array();
-		Teams.find({}, { sort: { name: 1 } }).forEach(function(team) {
-			cachedteams[team.name] = team;
-		});
-	});
+	Session.set("currentWeek", 13);
+	
 });
+
+Meteor.userEmail = function() {
+	if (!Meteor.user())
+		return;
+		
+	return _.first(Meteor.user().emails).address;
+}
 
 /*************************
 	Global functions
@@ -55,6 +54,10 @@ Template.page.showCreateDialog = function() {
 
 Template.page.showModifyDialog = function() {
 	return Session.get("modifyDialog");
+}
+
+Template.page.showModifyTeamDialog = function() {
+	return Session.get("modifyTeam");
 }
 
 /**********************
@@ -100,7 +103,6 @@ Template.games.events = {
 
 Template.game.kickoff = function() {
 	var millis = adjustDateUp(this.kickoff);
-	//var millis = this.kickoff + (new Date().getTimezoneOffset() * 60 * 1000);
 	return new Date(millis).format("D M d h:i A");
 }
 
@@ -109,13 +111,37 @@ Template.game.canModify = function() {
 }
 
 Template.game.awayRecord = function() {
-	var t = cachedteams[this.away];
+	var t = Teams.findOne({ name: this.away });
 	return '(' + t.wins + '-' + t.losses + '-' + t.ties + ')';
 }
 
 Template.game.homeRecord = function() {
-	var t = cachedteams[this.home];
+	var t = Teams.findOne({ name: this.home });
 	return '(' + t.wins + '-' + t.losses + '-' + t.ties + ')';
+}
+
+Template.game.canModifyTeam = function() {
+	return isAdmin();
+}
+
+Template.game.awayWon = function() {
+	if (this.actual === this.away) {
+		return (this.awaySelected ? 'success' : 'error');
+	}
+	
+	return '';
+}
+
+Template.game.homeWon = function() {
+	if (this.actual === this.home) {
+		return (this.homeSelected ? 'success' : 'error');
+	}
+
+	return '';
+}
+
+Template.game.noActual = function() {
+	return (!this.actual);
 }
 
 Template.game.events = {
@@ -138,6 +164,12 @@ Template.game.events = {
 	},
 	'click .modify-game' : function() {
 		Session.set("modifyDialog", { away: this.away, home: this.home });
+	},
+	'click .modify-away' : function() {
+		Session.set("modifyTeam", this.away);
+	},
+	'click .modify-home': function() {
+		Session.set("modifyTeam", this.home);
 	}
 };
 
@@ -306,15 +338,15 @@ Template.modifyDialog.events({
 		kickoff.setSeconds(0);
 		kickoff = adjustDateDown(kickoff.getTime());
 		
+		var actual = template.find('.actual').value;
+		
 		Matchups.update({ home: home, away: away, week: origWeek }, 
-			            { $set: { week: week, kickoff: kickoff }}, 
+			            { $set: { week: week, kickoff: kickoff, actual: actual }}, 
 			            { multi: false });
 			
 		Games.update({ home: home, away: away, week: origWeek },
-			         { $set: { week: week, kickoff: kickoff }},
+			         { $set: { week: week, kickoff: kickoff, actual: actual }},
 			         { multi: true });
-		//Matchups.insert({ owner: adminId, week: week, away: away, awayIcon: awayIcon, home: home, homeIcon: homeIcon, kickoff: kickoff });
-		//Games.insert({ owner: Meteor.userId(), week: week, away: away, awayIcon: awayIcon, home: home, homeIcon: homeIcon, kickoff: kickoff });
 		
 		Session.set("modifyDialog", undefined);
 	},
@@ -324,61 +356,76 @@ Template.modifyDialog.events({
 	}
 });
 
+/*************************************
+	Template.modifyTeamDialog
+*************************************/
 
-/*****************
-	Overrides
-*****************/
+Template.modifyTeamDialog.currentTeam = function() {
+	return Teams.findOne({ name: Session.get("modifyTeam") });
+}
 
-Meteor.loginWithPassword = _.wrap(Meteor.loginWithPassword, function(login) {
+Template.modifyTeamDialog.created = function() {
+	var t = Teams.findOne({ name: Session.get("modifyTeam") });
+	
+	Session.set("wins", t.wins);
+	Session.set("losses", t.losses);
+	Session.set("ties", t.ties);
+}
 
-	// Store the original arguments
-	var args = _.toArray(arguments).slice(1),
-		user = args[0],
-		pass = args[1],
-		origCallback = args[2];
+Template.modifyTeamDialog.wins = function() {
+	return Session.get("wins");
+}
 
-	var newCallback = function(error, result) {
-		var myGames = Games.findOne({ owner: Meteor.userId(), week: Session.get("currentWeek")});
+Template.modifyTeamDialog.losses = function() {
+	return Session.get("losses");
+}
 
-		if (!myGames) {
-			//console.log(Meteor.userId());
-			Matchups.find({ week: Session.get("currentWeek") }).forEach(function(matchup) {
-				matchup.owner = Meteor.userId();
-				delete matchup._id;
+Template.modifyTeamDialog.ties = function() {
+	return Session.get("ties");
+}
 
-				Games.insert(matchup);
-			});
-		}
-
-		origCallback.call(this, error, result);
+Template.modifyTeamDialog.events({
+	'click .wins-minus' : function() {
+		Session.set("wins", Session.get("wins") - 1);
+	},
+	
+	'click .wins-plus' : function() {
+		Session.set("wins", Session.get("wins") + 1);
+	},
+	
+	'click .losses-minus' : function() {
+		Session.set("losses", Session.get("losses") - 1);
+	},
+	
+	'click .losses-plus' : function() {
+		Session.set("losses", Session.get("losses") + 1);
+	},
+	
+	'click .ties-minus' : function() {
+		Session.set("ties", Session.get("ties") - 1);
+	},
+	
+	'click .ties-plus' : function() {
+		Session.set("ties", Session.get("ties") + 1);
+	},
+	
+	'click .cancel': function () {
+		Session.set("modifyTeam", undefined);
+		Session.set("wins", undefined);
+		Session.set("losses", undefined);
+		Session.set("ties", undefined);
+	},
+	
+	'click .save' : function() {
+		Teams.update(
+			{ name: Session.get("modifyTeam") }, 
+			{ $set: { wins: Session.get("wins"), losses: Session.get("losses"), ties: Session.get("ties") } }
+		);
+		
+		Session.set("modifyTeam", undefined);
+		Session.set("wins", undefined);
+		Session.set("losses", undefined);
+		Session.set("ties", undefined);
 	}
-
-	login(user, pass, newCallback);
-
-});
-
-Accounts.createUser = _.wrap(Accounts.createUser, function(createUser) {
-
-	// Store the original arguments
-	var args = _.toArray(arguments).slice(1),
-		user = args[0];
-		origCallback = args[1];
-
-	var newCallback = function(error) {
-		var myGames = Games.findOne({ owner: Meteor.userId(), week: Session.get("currentWeek")});
-		
-		if (!myGames) {
-			//console.log(Meteor.userId());
-			Matchups.find({ week: Session.get("currentWeek") }).forEach(function(matchup) {
-				matchup.owner = Meteor.userId();
-				delete matchup._id;
-
-				Games.insert(matchup);
-			});
-		}
-		
-		origCallback.call(this, error);
-	};
-
-	createUser(user, newCallback);
+	
 });

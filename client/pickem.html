@@ -13,6 +13,9 @@
 	{{#if showModifyDialog}}
 		{{> modifyDialog}}
 	{{/if}}
+	{{#if showModifyTeamDialog}}
+		{{> modifyTeamDialog}}
+	{{/if}}
 	<div class="container">
 		<div class="row"> </div>
 		<div class="row">
@@ -55,20 +58,42 @@
 
 <template name="game">
     <table class="table table-hover table-condensed">
-		<tr>
-			<td><img src="img/{{awayIcon}}" class="img-rounded" height="20" width="20"> {{away}} {{awayRecord}}</td>
+		<tr class="{{awayWon}}">
+			<td><img src="img/{{awayIcon}}" class="img-rounded" height="20" width="20"> 
+				{{#if canModifyTeam }}
+					<a href="#" class="modify-away">{{away}}</a>
+				{{else}}
+					{{away}}
+				{{/if}}
+				 {{awayRecord}}
+			</td>
 			{{#if awaySelected}}
-			<td><i class="icon-ok"></i></td>
+				<td><i class="icon-ok"></i></td>
 			{{else}}
-			<td><button class="btn btn-link pick-away">pick</button></td>
+				{{#if noActual}}
+					<td><button class="btn btn-link pick-away">pick</button></td>
+				{{else}}
+					<td>&nbsp;</td>
+				{{/if}}
 			{{/if}}
 		</tr>
-		<tr>
-			<td><img src="img/{{homeIcon}}" class="img-rounded" height="20" width="20">{{home}} {{homeRecord}}</td>
+		<tr class="{{homeWon}}">
+			<td><img src="img/{{homeIcon}}" class="img-rounded" height="20" width="20">
+				{{#if canModifyTeam }}
+					<a href="#" class="modify-home">{{home}}</a>
+				{{else}}
+					{{home}} 
+				{{/if}}
+				 {{homeRecord}}
+			</td>
 			{{#if homeSelected}}
-			<td><i class="icon-ok"></i></td>
+				<td><i class="icon-ok"></i></td>
 			{{else}}
-			<td><button class="btn btn-link pick-home">pick</button></td>
+				{{#if noActual}}
+					<td><button class="btn btn-link pick-home">pick</button></td>
+				{{else}}
+					<td>&nbsp;</td>
+				{{/if}}
 			{{/if}}
 		</tr>
 		<tr>
@@ -201,11 +226,65 @@
 						{{minuteOptions kickoffMinute}}
 					</select>
 				</div>
+				
+				<label>Victor</label>
+				<div>
+					<select class="actual">
+						{{victorOptions}}
+					</select>
+				</div>
 			</div>
 
 			<div class="modal-footer">
 				<a href="#" class="btn cancel">cancel</a>
 				<a href="#" class="btn btn-primary save">modify matchup</a>
+			</div>
+		</div>
+	{{/with}}
+</template>
+
+<template name="modifyTeamDialog">
+	{{#with currentTeam}}
+		<div class="mask"> </div>
+		<div class="modal">
+			<div class="modal-header">
+				<button type="button" class="close cancel">&times;</button>
+				<h3>Modify team</h3>
+			</div>
+
+			<div class="modal-body">
+				<input style="display:none" class="orig-week" value="{{week}}">
+				{{#if error}}
+					<div class="alert alert-error">{{error}}</div>
+				{{/if}}
+
+				<h3><img src="img/{{icon}}" class="img-rounded" height="20" width="20"> {{name}}</h3>
+
+				<label>Wins</label>
+				<div class="input-prepend input-append">
+					<a href="#" class="btn btn-mini wins-minus add-on">-</a>
+					<input class="wins input-mini" type="text" value="{{wins}}">
+					<a href="#" class="btn btn-mini wins-plus add-on">+</a>
+				</div>
+				
+				<label>Losses</label>
+				<div class="input-prepend input-append">
+					<a href="#" class="btn btn-mini losses-minus add-on">-</a>
+					<input class="losses input-mini" type="text" value="{{losses}}">
+					<a href="#" class="btn btn-mini losses-plus add-on">+</a>
+				</div>
+				
+				<label>Ties</label>
+				<div class="input-prepend input-append">
+					<a href="#" class="btn btn-mini ties-minus add-on">-</a>
+					<input class="ties input-mini" type="text" value="{{ties}}">
+					<a href="#" class="btn btn-mini ties-plus add-on">+</a>
+				</div>
+				
+
+			<div class="modal-footer">
+				<a href="#" class="btn cancel">cancel</a>
+				<a href="#" class="btn btn-primary save">modify team</a>
 			</div>
 		</div>
 	{{/with}}
